@@ -2,20 +2,10 @@ use std::borrow::Cow;
 
 use actix_web::{get, post, web::Json, App, HttpResponse, HttpServer, Responder};
 use actix_web::middleware::Logger;
-use diesel::{table, Insertable};
 use serde::{Deserialize, Serialize};
 use log::debug;
 
-table! {
-    applied_item (id) {
-        id -> Text,
-        name -> Text,
-        amount -> Integer,
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = applied_item)]
+#[derive(Debug, Serialize, Deserialize)]
 struct AppliedItem<'a> {
     id: Cow<'a, str>,
     name: Cow<'a, str>,

@@ -6,8 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-utils = "3.0.1"
 actix-web = "4.3.1"
+color-eyre = "0.6.2"
+derive_builder = "0.12.0"
+derive_more = "0.99.17"
 env_logger = "0.10.0"
+firestore = "0.32.2"
+gcloud-sdk = { version = "0.20.3", features = ["google-pubsub-v1", "google-pubsub-v1beta2"] }
 log = { version = "0.4.19", features = ["std"] }
 pretty_env_logger = "0.5.0"
 serde = { version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.99"

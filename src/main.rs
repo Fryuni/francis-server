@@ -5,6 +5,7 @@ use actix_web::{get, post, web::Json, App, HttpResponse, HttpServer, Responder};
 use color_eyre::eyre::{eyre, WrapErr};
 use firestore::FirestoreDb;
 use gcloud_sdk::GoogleEnvironment;
+use serde::{Serialize, Deserialize};
 use log::{debug, error};
 
 use crate::db::DbHandle;
@@ -12,6 +13,13 @@ use crate::model::AppliedItem;
 
 mod db;
 mod model;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct User {
+    #[serde(alias = "_firestore_id")]
+    id: String,
+    role: String,
+}
 
 #[get("/")]
 async fn hello(db: DbHandle) -> impl Responder {
@@ -24,7 +32,7 @@ async fn hello(db: DbHandle) -> impl Responder {
     };
 
     let users = users.iter()
-        .map(firestore::firestore_document_to_serializable::<HashMap<String, serde_json::Value>>)
+        .map(firestore::firestore_document_to_serializable::<User>)
         .collect::<Result<Vec<_>, _>>().unwrap();
 
     HttpResponse::Ok().json(users)

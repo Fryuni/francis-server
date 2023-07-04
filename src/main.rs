@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use actix_web::middleware::Logger;
 use actix_web::{get, post, web::Json, App, HttpResponse, HttpServer, Responder};
 use color_eyre::eyre::{eyre, WrapErr};
@@ -33,7 +35,20 @@ async fn hello(db: DbHandle) -> impl Responder {
 }
 
 #[post("/set_items")]
-async fn set_items(db: DbHandle, Json(body): Json<Vec<AppliedItem<'_>>>) -> impl Responder {
+async fn set_items<'a>(db: DbHandle, Json(body): Json<Vec<AppliedItem<'a>>>) -> impl Responder {
+    let mut entries: BTreeMap<String, AppliedItem<'a>> = BTreeMap::new();
+
+    for item in body {
+        match entries.entry(item.id.clone().into_owned()) {
+            std::collections::btree_map::Entry::Vacant(entry) => { entry.insert(item); },
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                entry.get_mut().amount += item.amount;
+            }
+        }
+    }
+
+    let body = entries.into_values().collect();
+
     match db.set_items(body).await {
         Ok(_) => {}
         Err(err) => {

@@ -33,6 +33,9 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - run: yarn
+        working-directory: infra
       - uses: pulumi/actions@v3
         with:
           command: up

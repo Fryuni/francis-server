@@ -3,6 +3,8 @@ use actix_web::{dev::Payload, error::InternalError, http::StatusCode, FromReques
 use color_eyre::{eyre::eyre, Report};
 use firestore::{FirestoreDb, FirestoreDocument, FirestoreListingSupport};
 
+use crate::model::AppliedItem;
+
 #[derive(Debug)]
 pub struct DbHandle {
     firestore: FirestoreDb,
@@ -30,11 +32,41 @@ impl FromRequest for DbHandle {
 }
 
 impl DbHandle {
-    pub async fn list_docs(&self) -> color_eyre::Result<Vec<FirestoreDocument>> {
-        let res = self.firestore
-            .list_doc(firestore::FirestoreListDocParams::new("user".to_string()))
+    pub async fn list_items(&self) -> color_eyre::Result<Vec<AppliedItem<'static>>> {
+        let res = self
+            .firestore
+            .list_doc(firestore::FirestoreListDocParams::new("items".to_string()))
             .await?;
 
-        Ok(res.documents)
+        Ok(res
+            .documents
+            .iter()
+            .map(firestore::firestore_document_to_serializable::<AppliedItem<'static>>)
+            .collect::<Result<Vec<_>, _>>()?)
+    }
+
+    pub async fn set_items(&self, items: Vec<AppliedItem<'_>>) -> color_eyre::Result<()> {
+        let batch_writer = self.firestore.create_simple_batch_writer().await?;
+        let mut batch = batch_writer.new_batch();
+
+        for item in items {
+            batch.update_object(
+                "items",
+                &item.id,
+                &item,
+                None,
+                None,
+                vec![firestore::FirestoreFieldTransform::new(
+                    "update_time".to_string(),
+                    firestore::FirestoreFieldTransformType::SetToServerValue(
+                        firestore::FirestoreTransformServerValue::RequestTime,
+                    ),
+                )],
+            )?;
+        }
+
+        batch.write().await?;
+
+        Ok(())
     }
 }

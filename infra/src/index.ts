@@ -16,9 +16,17 @@ const gcrProvider = new docker.Provider('gcr', {
   }],
 });
 
+const localImage = docker.getRemoteImageOutput({
+  name: imageTag,
+});
+
 const image = new docker.RegistryImage(
   'image',
-  {name: imageTag, keepRemotely: true},
+  {
+    name: imageTag,
+    keepRemotely: true,
+    triggers: {digest: localImage.id},
+  },
   {provider: gcrProvider},
 );
 

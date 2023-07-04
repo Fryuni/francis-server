@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use actix_web::middleware::Logger;
 use actix_web::{get, post, web::Json, App, HttpResponse, HttpServer, Responder};
 use color_eyre::eyre::{eyre, WrapErr};
 use firestore::FirestoreDb;
 use gcloud_sdk::GoogleEnvironment;
-use serde::{Serialize, Deserialize};
 use log::{debug, error};
+use serde::{Deserialize, Serialize};
 
 use crate::db::DbHandle;
 use crate::model::AppliedItem;
@@ -23,24 +21,25 @@ struct User {
 
 #[get("/")]
 async fn hello(db: DbHandle) -> impl Responder {
-    let users = match db.list_docs().await {
-        Ok(users) => users,
+    let items = match db.list_items().await {
+        Ok(items) => items,
         Err(err) => {
             error!("Error listing docs: {err}");
             return HttpResponse::InternalServerError().body("Failed to list docs");
         }
     };
 
-    let users = users.iter()
-        .map(firestore::firestore_document_to_serializable::<User>)
-        .collect::<Result<Vec<_>, _>>().unwrap();
-
-    HttpResponse::Ok().json(users)
+    HttpResponse::Ok().json(items)
 }
 
 #[post("/set_items")]
-async fn set_items(Json(body): Json<Vec<AppliedItem<'_>>>) -> impl Responder {
-    println!("{body:?}");
+async fn set_items(db: DbHandle, Json(body): Json<Vec<AppliedItem<'_>>>) -> impl Responder {
+    match db.set_items(body).await {
+        Ok(_) => {}
+        Err(err) => {
+            error!("Error saving items data: {err:?}");
+        }
+    };
 
     HttpResponse::Ok().body("OK")
 }

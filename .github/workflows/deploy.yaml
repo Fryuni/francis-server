@@ -42,6 +42,12 @@ jobs:
           cache-path: /tmp/buildkit-cache
           cache-max-size: 2g
 
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: southamerica-east1-docker.pkg.dev/lferraz-personal-servers-1/images/francis-server:latest
+          load: true
+
       - run: yarn
         working-directory: infra
       - uses: pulumi/actions@v3

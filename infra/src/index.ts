@@ -1,26 +1,26 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as gcp from "@pulumi/gcp";
 import * as docker from '@pulumi/docker';
-import {project, imageName, location, memory, cpu, containerPort, concurrency, appPath} from './config';
+import {project, imageName, location, memory, cpu, containerPort, concurrency} from './config';
 
-const imageTag = `gcr.io/${project}/${imageName}:latest`;
+const server = `${location}-docker.pkg.dev`;
+const imageTag = `${server}/${project}/${imageName}:latest`;
 
 const authToken = pulumi.output(gcp.organizations.getClientConfig()).accessToken;
 
-const image = new docker.Image('image', {
-  imageName: imageTag,
-  build: {
-    builderVersion: docker.BuilderVersion.BuilderBuildKit,
-    platform: 'linux/amd64',
-    context: appPath,
-  },
-  registry: {
-    username: '_dcgcloud_token',
+const gcrProvider = new docker.Provider('gcr', {
+  registryAuth: [{
+    address: server,
+    username: 'oauth2accesstoken',
     password: authToken,
-    server: gcp.container.getRegistryRepositoryOutput().repositoryUrl,
-  }
+  }],
 });
 
+const image = new docker.RegistryImage(
+  'image',
+  {name: imageTag, keepRemotely: true},
+  {provider: gcrProvider},
+);
 
 const apiService = new gcp.projects.Service('services', {
   service: 'run.googleapis.com',
@@ -34,7 +34,7 @@ const service = new gcp.cloudrun.Service("service", {
         spec: {
             containers: [
                 {
-                    image: image.repoDigest.apply(t => t!),
+                    image: pulumi.interpolate`${imageTag}@${image.sha256Digest}`,
                     resources: {
                         limits: {
                             memory,

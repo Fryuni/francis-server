@@ -18,7 +18,8 @@ jobs:
           node-version: '18'
           cache: yarn
           cache-dependency-path: infra/yarn.lock
-      - uses: docker/setup-buildx-action@v2
+      - id: buildx
+        uses: docker/setup-buildx-action@v2
       - uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: 'projects/429303088514/locations/global/workloadIdentityPools/deploy/providers/github'
@@ -26,13 +27,28 @@ jobs:
 
       - run: gcloud auth configure-docker
 
+      - name: Enable buildkit cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/buildkit-cache/buildkit-state.tar
+          key: ${{ runner.os }}-buildkit-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildkit-
+
+      - name: Load buildkit state from cache
+        uses: dashevo/gh-action-cache-buildkit-state@v1
+        with:
+          builder: buildx_buildkit_${{ steps.buildx.outputs.name }}0
+          cache-path: /tmp/buildkit-cache
+          cache-max-size: 2g
+
       - uses: docker/build-push-action@v4
         with:
           context: .
           tags: gcr.io/lferraz-personal-servers-1/francis-server:latest
           push: true
-          cache-from: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache
-          cache-to: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache,mode=max
+          # cache-from: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache
+          # cache-to: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache,mode=max
 
       - run: yarn
         working-directory: infra

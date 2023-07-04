@@ -1,0 +1,12 @@
+{
+    "name": "francis-server",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^20.3.3"
+    },
+    "dependencies": {
+        "@pulumi/docker": "^4",
+        "@pulumi/gcp": "^6.0.0",
+        "@pulumi/pulumi": "^3.0.0"
+    }
+}

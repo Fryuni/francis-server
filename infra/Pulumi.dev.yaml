@@ -1,0 +1,7 @@
+config:
+  francis-server:appPath: ..
+  francis-server:containerPort: "8080"
+  francis-server:imageName: francis-server
+
+  gcp:project: lferraz-personal-servers-1
+  gcp:region: southamerica-east1

@@ -1,8 +1,26 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as gcp from "@pulumi/gcp";
-import {project, imageName, location, memory, cpu, containerPort, concurrency} from './config';
+import * as docker from '@pulumi/docker';
+import {project, imageName, location, memory, cpu, containerPort, concurrency, appPath} from './config';
 
 const imageTag = `gcr.io/${project}/${imageName}:latest`;
+
+const authToken = pulumi.output(gcp.organizations.getClientConfig()).accessToken;
+
+const image = new docker.Image('image', {
+  imageName: imageTag,
+  build: {
+    builderVersion: docker.BuilderVersion.BuilderBuildKit,
+    platform: 'linux/amd64',
+    context: appPath,
+  },
+  registry: {
+    username: '_dcgcloud_token',
+    password: authToken,
+    server: gcp.container.getRegistryRepositoryOutput().repositoryUrl,
+  }
+});
+
 
 const apiService = new gcp.projects.Service('services', {
   service: 'run.googleapis.com',
@@ -16,7 +34,7 @@ const service = new gcp.cloudrun.Service("service", {
         spec: {
             containers: [
                 {
-                    image: imageTag,
+                    image: image.repoDigest.apply(t => t!),
                     resources: {
                         limits: {
                             memory,

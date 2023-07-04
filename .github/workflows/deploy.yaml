@@ -42,14 +42,6 @@ jobs:
           cache-path: /tmp/buildkit-cache
           cache-max-size: 2g
 
-      - uses: docker/build-push-action@v4
-        with:
-          context: .
-          tags: gcr.io/lferraz-personal-servers-1/francis-server:latest
-          push: true
-          # cache-from: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache
-          # cache-to: type=registry,ref=gcr.io/lferraz-personal-servers-1/francis-server:buildcache,mode=max
-
       - run: yarn
         working-directory: infra
       - uses: pulumi/actions@v3

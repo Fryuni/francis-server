@@ -1,13 +1,8 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as gcp from "@pulumi/gcp";
-import * as docker from "@pulumi/docker";
 import {project, imageName, location, memory, cpu, containerPort, concurrency} from './config';
 
 const imageTag = `gcr.io/${project}/${imageName}:latest`;
-
-const remoteImage = pulumi.output(docker.getRegistryImage({
-  name: imageTag,
-}));
 
 const apiService = new gcp.projects.Service('services', {
   service: 'run.googleapis.com',
@@ -21,7 +16,7 @@ const service = new gcp.cloudrun.Service("service", {
         spec: {
             containers: [
                 {
-                    image: pulumi.interpolate`${imageTag}@${remoteImage.sha256Digest}`,
+                    image: imageTag,
                     resources: {
                         limits: {
                             memory,
